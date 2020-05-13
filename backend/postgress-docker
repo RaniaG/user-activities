@@ -1,0 +1,12 @@
+Postgres docker
+
+1- docker network create some-network
+2- docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+3- docker exec -it some-postgres psql -U postgres
+
+
+• create database user_activities;
+• \c user_activities
+• create table Team (id int primary key, name varchar(50) not null);
+• \d
+• create table User(id int GENERATED ALWAYS AS IDENTITY , name varchar(50), teamId int references Team(id), primary key (id));
