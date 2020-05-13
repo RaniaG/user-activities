@@ -35,12 +35,12 @@ export default {
       userSessionData: [
         { userId: 2, activity: "Facebook", duration: 30, sessionId: 3 },
         { userId: 2, activity: "Facebook", duration: 10, sessionId: 2 },
-        { userId: 3, activity: "IDE", duration: 50, sessionId: 1 },
+        { userId: 3, activity: "Facebook", duration: 50, sessionId: 1 },
         { userId: 4, activity: "Browser", duration: 120, sessionId: 4 }
       ],
       userData: [
         { userId: 2, activity: "Facebook", duration: 30 },
-        { userId: 3, activity: "IDE", duration: 50 },
+        { userId: 3, activity: "Facebook", duration: 50 },
         { userId: 4, activity: "Browser", duration: 120 }
       ],
       uniqueActivities: ["Facebook", "IDE", "Browser"],
@@ -64,8 +64,11 @@ export default {
   },
   methods: {
     prepChartData() {
+      let uniqueUsers = this.userData
+        .map(e => e.userId)
+        .filter((v, i, a) => a.indexOf(v) === i);
       this.chartData = {
-        labels: this.userData.map(e => e.userId),
+        labels: uniqueUsers,
         datasets: this.uniqueActivities.map(act => {
           return {
             label: act,
