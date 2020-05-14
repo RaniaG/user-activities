@@ -15,7 +15,7 @@ export class UserActivities {
     user: User;
 
     @Column()
-    sessionId: number;
+    sessionId: string;
 
     @Column()
     action: string;

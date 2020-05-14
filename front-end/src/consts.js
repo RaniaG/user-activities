@@ -1,6 +1,6 @@
 export const Consts = {
-    baseUrl: '',
-    dashboardRoute: '',
-    teamsRoute: '',
-    usersRoute: ''
+    baseUrl: 'http://localhost:3000/reports',
+    dashboardRoute: '/dashboard',
+    teamsRoute: '/teams',
+    usersRoute: '/users'
 }

@@ -13,10 +13,7 @@ export * from './interfaces/team-service.interface';
 export * from './interfaces/user-activity-service.interface';
 export * from './interfaces/user-service.interface';
 export * from './interfaces/reports-service.interface'
-export * from './interfaces/user-activities-duraiton.repository.interface'
-export * from './interfaces/user-activities.repository.interface'
-export * from './interfaces/user.repository.interface'
-export * from './interfaces/team.repository.interface'
+
 
 
 

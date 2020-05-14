@@ -1,25 +1,26 @@
-import { IUserService, UserDto, ActivityDto, IUserRepository, User, ITeamRepository } from "../../core/build/index";
+import { IUserService, UserDto, ActivityDto, User, Team } from "../../core/build/index";
 import { Inject, Injectable, ForbiddenException, NotImplementedException, } from '@nestjs/common';
-import { UserRepository, TeamRepository } from '../../Infrastructure/build/index';
-import { Repository, Connection } from 'typeorm';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 @Injectable()
 export class UserService extends Repository<User> implements IUserService {
-    private readonly teamRepo: ITeamRepository;
-    private readonly userRepo: IUserRepository;
-
-    constructor(private readonly connection: Connection) {
+    constructor(@InjectRepository(Team) private readonly teamRepo: Repository<Team>,
+        @InjectRepository(User) private readonly userRepo: Repository<User>) {
         super();
-        this.teamRepo = this.connection.getCustomRepository(TeamRepository);
-        this.userRepo = this.connection.getCustomRepository(UserRepository);
     }
-    async createUser(userDto: UserDto) {
+    async createUser(userDto: UserDto): Promise<any> {
         const user = new User();
         user.name = userDto.name;
-        user.team = await this.teamRepo.findBy(userDto.teamid);
-        return this.userRepo.addUser(user);
+        const team = await this.teamRepo.findOne(userDto.teamid);
+        if (team)
+            user.team = team;
+        return this.userRepo.insert(user);
     }
     async getAllUsers(): Promise<any[]> {
-        throw new NotImplementedException();
+        return this.userRepo.find();
+    }
+    async getUsersCount(): Promise<number> {
+        return this.userRepo.count();
     }
 
 }

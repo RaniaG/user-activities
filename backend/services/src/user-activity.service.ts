@@ -1,122 +1,116 @@
-import { IUserActivityService, ActivityDto, ActivityDurationDto } from '../../core/build/index';
+import { IUserActivityService, ActivityDto, ActivityDurationDto, UserActivities, Team, User, UserActivitiesDuration, Activity } from '../../core/build/index';
 import { Inject, Injectable, NotImplementedException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UserActivityService implements IUserActivityService {
-    constructor() {
+    constructor(@InjectRepository(Team) private readonly teamRepo: Repository<Team>,
+        @InjectRepository(User) private readonly userRepo: Repository<User>,
+        @InjectRepository(Activity) private readonly actRepo: Repository<Activity>,
+        @InjectRepository(UserActivities) private readonly userActRepo: Repository<UserActivities>,
+        @InjectRepository(UserActivitiesDuration) private readonly userActDurRepo: Repository<UserActivitiesDuration>
+    ) {
     }
 
     async createUserActivity(activityDto: ActivityDto): Promise<any> {
-        throw new NotImplementedException();
+        const userActivitiy = new UserActivities();
+        userActivitiy.sessionId = activityDto.sessionid;
+        userActivitiy.action = activityDto.action;
+        userActivitiy.timeStamp = activityDto.event_time;
+        //find user
+        userActivitiy.user = await this.userRepo.findOne(activityDto.userid) ?? userActivitiy.user;
+        let activity = await this.actRepo.findOne({ where: { name: activityDto.activity } });
+        if (!activity) {
+            activity = new Activity();
+            activity.name = activityDto.activity;
+            let insertResult = await this.actRepo.insert(activity);
+        }
+        userActivitiy.activity = activity;
+        let insertRes = await this.userActRepo.insert(userActivitiy);
+        return userActivitiy;
+    }
 
-        //    try {
-        //     const insert_UserActivity = this._insertIntoUserActivity(activityDto);
-        //     const insert_TeamActivity = this._insertIntoTeamActivity(activityDto);
-        //     await Promise.all([insert_UserActivity,insert_TeamActivity]);
 
-        //     let userActivity = await this._getUserActivity(activityDto);
-        //     if(userActivity != null && 
-        //         userActivity.action == 'start' && activityDto.action == 'end'){
-        //         await this.addDuration(activityDto,userActivity);
-        //         return true;
-        //     }
-        //    } catch (error) {
-        //        console.log(error);
-        //        return false;
-        //    }
+
+    async createUserActivityDurations(userActivity: ActivityDto): Promise<any> {
+        const alreadyExists = await this.userActDurRepo.createQueryBuilder("userAct")
+            .leftJoinAndSelect("userAct.activity", "act")
+            .leftJoinAndSelect("userAct.user", "usr")
+            .where("userAct.sessionId = :sessionId ", { sessionId: userActivity.sessionid })
+            .andWhere("act.name = :name", { name: userActivity.activity })
+            .andWhere("usr.id = :id", { id: userActivity.userid })
+            .getOne();
+        if (!alreadyExists) {
+            const startActivity = await this.userActRepo.createQueryBuilder("userAct")
+                .leftJoinAndSelect("userAct.activity", "act")
+                .leftJoinAndSelect("userAct.user", "usr")
+                .where("userAct.sessionId = :sessionId ", { sessionId: userActivity.sessionid })
+                .andWhere("userAct.action= :action", { action: "open" })
+                .andWhere("act.name = :name", { name: userActivity.activity })
+                .andWhere("usr.id = :id", { id: userActivity.userid })
+                .getOne();
+            if (startActivity) {
+                let endtime = new Date(userActivity.event_time).getTime();
+                let starttime = new Date(startActivity.timeStamp).getTime();
+                let diff = (starttime - endtime) / 1000;
+                diff /= 60;
+                const actDur = new UserActivitiesDuration();
+                actDur.duration = Math.abs(Math.round(diff));
+                actDur.sessionId = userActivity.sessionid;
+                actDur.activity = startActivity.activity;
+                actDur.user = startActivity.user;
+                this.userActDurRepo.insert(actDur);
+            }
+        }
 
     }
 
-    addDuration(activityDto: ActivityDto, userActivity: ActivityDto) {
-        // let endtime = new Date(activityDto.event_time).getTime();
-        // let starttime = new Date(userActivity.event_time).getTime();
-        // let diff = (starttime - endtime) / 1000;
-        // diff /= 60;
-        // const duration = Math.abs(Math.round(diff));
-        // console.log('duration is ', duration);
-        // const _insert_UserActivityDuration =
-        //     this._insertIntoUserActivityDuration({
-        //         userId: activityDto.userid,
-        //         activity: activityDto.activity,
-        //         teamId: activityDto.teamid,
-        //         duration: duration,
-        //         sessionId: activityDto.sessionid
-        //     });
-
-        // const _insert_TeamActivityDuration =
-        //     this._insertIntoTeamActivityDuration({
-        //         userId: activityDto.userid,
-        //         activity: activityDto.activity,
-        //         teamId: activityDto.teamid,
-        //         duration: duration,
-        //         sessionId: activityDto.sessionid
-        //     });
-
-        // return Promise.all([_insert_UserActivityDuration, _insert_TeamActivityDuration]);
+    async getUserActivitiesDurationsBySession(): Promise<any[]> {
+        const durations = await this.userActDurRepo.find({ relations: ["user", "activity"] });
+        return durations.map(e => {
+            return {
+                user: e.user.name,
+                sessionId: e.sessionId,
+                activity: e.activity.name,
+                duration: e.duration,
+                userId: e.user.id
+            }
+        });
     }
+    async getUserActivitiesDurations(): Promise<any> {
+        const durations = await this.userActDurRepo
+            .createQueryBuilder("userAct")
+            .select('"userAct"."userId"')
+            .addSelect('"user"."name"', "user")
+            .addSelect('"userAct"."activityId"')
+            .addSelect('"act"."name"', "activity")
+            .addSelect('SUM("userAct"."duration")', "duration")
+            .leftJoin(User, "user", '"user"."id" = "userAct"."userId"')
+            .leftJoin(Activity, "act", '"act"."id" = "userAct"."activityId"')
+            .groupBy('"userAct"."userId"')
+            .addGroupBy('"user"."name"')
+            .addGroupBy('"userAct"."activityId"')
+            .addGroupBy('"act"."name"')
+            .getRawMany();
 
-    createUserActivityDurations(logActivityActionDto: ActivityDurationDto) {
-        throw new Error("Method not implemented.");
-    }
-
-    getUserActivitiesDurations(): any[] {
-        throw new Error("Method not implemented.");
+        return durations;
     }
 
     async getUserActivities(): Promise<any[]> {
-        throw new Error("Method not implemented.");
-        // const query = 'select userid,activity,action,sessionid,event_time from activites.user_activity';
-        // const result = await this.dataAccessLayer.getQueryResult(query);
-        // return result.rows;
+        const activities = await this.userActRepo.find({ relations: ["user", "activity"] });
+        return activities.map(e => {
+            return {
+                user: e.user.name,
+                sessionId: e.sessionId,
+                timeStamp: e.timeStamp,
+                action: e.action,
+                activity: e.activity.name
+            }
+        });
     }
 
-    private async _getUserActivity(userActivityDto: ActivityDto): Promise<ActivityDto> {
-        throw new Error("Method not implemented.");
-
-        // let query = `SELECT userid,activity,action,sessionid,event_time from activites.user_activity where userid=? and activity=? and sessionId=? and action=?`;
-        // let command = new Command();
-        // command.query = query;
-        // command.params = [userActivityDto.userid, userActivityDto.activity, userActivityDto.sessionid, 'start'];
-        // let result = await this.dataAccessLayer.getQueryResultByCommand(command);
-        // return result.rows.map((item: ActivityDto) => {
-        //     return item;
-        // })[0]
-
-    }
-
-    private async _insertIntoUserActivity(userActivityDto: ActivityDto) {
-        // let query = 'insert into activites.user_activity (userid, teamid, sessionid, action, activity, event_time) values(?,?,?,?,?,?);';
-        // let command = new Command();
-        // command.query = query;
-        // command.params = [userActivityDto.userid, userActivityDto.teamid, userActivityDto.sessionid, userActivityDto.action, userActivityDto.activity, userActivityDto.event_time.toString()];
-
-        // await this.dataAccessLayer.excuteCommand(command);
-    }
-
-    private async _insertIntoTeamActivity(teamActivityDto: ActivityDto) {
-        // let query = 'insert into activites.user_activity_team (userid, teamid, sessionid, action, activity, event_time) values(?,?,?,?,?,?);';
-        // let command = new Command();
-        // command.query = query;
-        // command.params = [teamActivityDto.userid, teamActivityDto.teamid, teamActivityDto.sessionid, teamActivityDto.action, teamActivityDto.activity, teamActivityDto.event_time.toString()];
-
-        // await this.dataAccessLayer.excuteCommand(command);
-    }
-
-    private async _insertIntoUserActivityDuration(userActivityDurationDto: ActivityDurationDto) {
-        // let query = 'insert into activites.user_activity_duration (userid , teamid , sessionid , activity , event_duration) values (?,?,?,?,?);';
-        // let command = new Command();
-        // command.query = query;
-        // command.params = [userActivityDurationDto.userId, userActivityDurationDto.teamId, userActivityDurationDto.sessionId, userActivityDurationDto.activity, userActivityDurationDto.duration];
-
-        // await this.dataAccessLayer.excuteCommand(command);
-    }
-
-    private async _insertIntoTeamActivityDuration(teamActivityDurationDto: ActivityDurationDto) {
-        // let query = 'insert into activites.team_activity_duration (userid , teamid , activity , event_duration) values (?,?,?,?);';
-        // let command = new Command();
-        // command.query = query;
-        // command.params = [teamActivityDurationDto.userId, teamActivityDurationDto.teamId, teamActivityDurationDto.activity, teamActivityDurationDto.duration];
-
-        // await this.dataAccessLayer.excuteCommand(command);
+    getActivities(): Promise<any[]> {
+        return this.actRepo.find();
     }
 }

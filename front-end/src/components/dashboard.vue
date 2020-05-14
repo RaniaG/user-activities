@@ -25,7 +25,7 @@
         <table class="table table-striped">
           <thead class="thead-light">
             <tr>
-              <th scope="col">User id</th>
+              <th scope="col">User</th>
               <th scope="col">Session id</th>
               <th scope="col">Activity</th>
               <th scope="col">Action</th>
@@ -34,7 +34,7 @@
           </thead>
           <tbody>
             <tr v-for="record in realTimeData" :key="record.userId">
-              <td>{{record.userId}}</td>
+              <td>{{record.user}}</td>
               <td>{{record.sessionId}}</td>
               <td>{{record.activity}}</td>
               <td>
@@ -43,7 +43,7 @@
                   :class="{'badge-primary':record.action=='open','badge-secondary':record.action!='open'}"
                 >{{record.action}}</span>
               </td>
-              <td>{{record.timestamp}}</td>
+              <td>{{record.timeStamp}}</td>
             </tr>
           </tbody>
         </table>
@@ -69,14 +69,17 @@ export default {
     }
   },
   created() {
-    // this.$http.get(Consts.baseUrl + Consts.dashboardRoute).then(
-    //   response => {
-    //     // success callback
-    //   },
-    //   response => {
-    //     // error callback
-    //   }
-    // );
+    console.log(Consts.baseUrl + Consts.dashboardRoute);
+    this.$http.get(Consts.baseUrl + Consts.dashboardRoute).then(
+      response => {
+        this.realTimeData = response.body.dashboardData;
+        this.numberOfTeams = response.body.teamsCount;
+        this.numberOfUsers = response.body.usersCount;
+      },
+      response => {
+        // error callback
+      }
+    );
   }
 };
 </script>

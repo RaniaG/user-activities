@@ -12,20 +12,9 @@ export class ActivitiesController {
 
     @Post()
     async logActivityAction(@Body() activityDto: ActivityDto) {
-       await this.userActivitiesService.createUserActivity(activityDto);
+        await this.userActivitiesService.createUserActivity(activityDto);
+        if (activityDto.action == "end")
+            await this.userActivitiesService.createUserActivityDurations(activityDto);
         this.activitiesGateway.emitEvent("message", activityDto);
-    }
-    @Get('getSessionActivitiesDurations/:groupType')//teams or users
-    getSessionActivitiesDurations(@Param() groupType: string) {
-        
-    }
-
-    @Get('getTeamActivitiesDurations')
-    getTeamActivitiesDurations() {
-
-    }
-    @Get('getAll')
-    getAllActivities() {
-        return this.userActivitiesService.getUserActivities();
     }
 }

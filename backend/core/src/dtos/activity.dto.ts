@@ -5,5 +5,5 @@ export class ActivityDto {
     sessionid: string;
     activity: string;
     action: string;
-    event_time: Date;
+    event_time: string;
 }

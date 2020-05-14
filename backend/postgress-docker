@@ -1,7 +1,7 @@
 Postgres docker
 
 1- docker network create some-network
-2- docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d postgres
+2- docker run --name some-postgres -p 5432:5432 -e POSTGRES_PASSWORD=mysecretpassword -d postgres
 3- docker exec -it some-postgres psql -U postgres
 
 

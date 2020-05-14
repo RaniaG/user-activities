@@ -16,7 +16,7 @@
             @click="prepareChartData(item.teamId)"
             :class="{'active':item.teamId==activeTeamId}"
           >
-            <td>{{item.teamId}}</td>
+            <td>{{item.team}}</td>
             <td>{{item.activity}}</td>
             <td>{{item.duration}}</td>
           </tr>
@@ -30,18 +30,13 @@
 </template>
 
 <script>
+import { Consts } from "../consts";
 import chart from "./donutChart";
 import { generateRandomColor } from "../helpers";
 export default {
   data: function() {
-    let dummyData = [12, 19, 3, 5, 2, 3];
     return {
-      data: [
-        { teamId: 1, activity: "Facebook", duration: 120 },
-        { teamId: 1, activity: "Whatsapp", duration: 30 },
-        { teamId: 2, activity: "IDE", duration: 200 },
-        { teamId: 3, activity: "Facebook", duration: 29 }
-      ],
+      data: [],
       activeTeamId: -1,
       chartData: {},
       chartOptions: {}
@@ -64,11 +59,17 @@ export default {
           }
         ]
       };
-      console.log(this.chartData);
     }
   },
   created() {
-    this.prepareChartData();
+    this.$http.get(Consts.baseUrl + Consts.teamsRoute).then(
+      response => {
+        this.data = response.body;
+      },
+      response => {
+        // error callback
+      }
+    );
   }
 };
 </script>

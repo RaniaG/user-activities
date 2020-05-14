@@ -15,7 +15,7 @@ export class UserActivitiesDuration {
     user: User;
 
     @Column()
-    sessionId: number;
+    sessionId: string;
 
     @Column()
     duration: number;

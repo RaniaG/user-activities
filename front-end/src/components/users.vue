@@ -4,7 +4,7 @@
       <table class="table">
         <thead class="thead-dark">
           <tr>
-            <th scope="col">User Id</th>
+            <th scope="col">User</th>
             <th scope="col">Activity</th>
             <th scope="col">Duration</th>
             <th scope="col">Session Id</th>
@@ -12,7 +12,7 @@
         </thead>
         <tbody>
           <tr v-for="item in userSessionData" :key="item.userId+item.sessionId+item.activity">
-            <td>{{item.userId}}</td>
+            <td>{{item.user}}</td>
             <td>{{item.activity}}</td>
             <td>{{item.duration}}</td>
             <td>{{item.sessionId}}</td>
@@ -27,23 +27,16 @@
 </template>
 
 <script>
+import { Consts } from "../consts";
 import chart from "./barChart";
 import { generateRandomColor } from "../helpers";
 export default {
   data: function() {
     return {
-      userSessionData: [
-        { userId: 2, activity: "Facebook", duration: 30, sessionId: 3 },
-        { userId: 2, activity: "Facebook", duration: 10, sessionId: 2 },
-        { userId: 3, activity: "Facebook", duration: 50, sessionId: 1 },
-        { userId: 4, activity: "Browser", duration: 120, sessionId: 4 }
-      ],
-      userData: [
-        { userId: 2, activity: "Facebook", duration: 30 },
-        { userId: 3, activity: "Facebook", duration: 50 },
-        { userId: 4, activity: "Browser", duration: 120 }
-      ],
-      uniqueActivities: ["Facebook", "IDE", "Browser"],
+      userSessionData: [],
+      userData: [],
+      uniqueActivities: [],
+      uniqueUser: [],
       chartData: {},
       chartOptions: {
         barValueSpacing: 20,
@@ -64,26 +57,41 @@ export default {
   },
   methods: {
     prepChartData() {
-      let uniqueUsers = this.userData
-        .map(e => e.userId)
-        .filter((v, i, a) => a.indexOf(v) === i);
+      let uniqueUsers = this.uniqueUsers.map(e => e.name);
+      let userData = this.userData;
       this.chartData = {
         labels: uniqueUsers,
         datasets: this.uniqueActivities.map(act => {
           return {
             label: act,
             backgroundColor: generateRandomColor(),
-            data: this.userData.map(e => {
-              if (e.activity == act) return e.duration;
+            data: this.uniqueUsers.map(e => {
+              debugger;
+              const userAct = userData.find(
+                i => i.userId == e.id && i.activity == act
+              );
+              if (userAct) return +userAct.duration;
               return 0;
             })
           };
         })
       };
+      console.log(this.chartData);
     }
   },
   created() {
-    this.prepChartData();
+    this.$http.get(Consts.baseUrl + Consts.usersRoute).then(
+      response => {
+        this.userSessionData = response.body.userSessionData;
+        this.userData = response.body.userData;
+        this.uniqueActivities = response.body.uniqueActivities.map(e => e.name);
+        this.uniqueUsers = response.body.uniqueUsers;
+        this.prepChartData();
+      },
+      response => {
+        // error callback
+      }
+    );
   }
 };
 </script>

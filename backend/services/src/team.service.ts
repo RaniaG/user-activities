@@ -1,22 +1,20 @@
-import { ITeamService, TeamDto } from "../../core/build";
-import { Inject, NotImplementedException } from "@nestjs/common";
+import { ITeamService, TeamDto, Team } from "../../core/build/index";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Repository } from "../../Infrastructure/node_modules/typeorm";
 
 export class TeamService implements ITeamService {
-    constructor() {
+    constructor(@InjectRepository(Team) private readonly teamRepo: Repository<Team>) {
     }
-    createTeam(teamDto: TeamDto) {
-        throw new NotImplementedException();
-        // const command = {
-        //     query: 'insert into activites.team (teamid, name) values (?,?);',
-        //     params: [teamDto.id, teamDto.name]
-        // }
-        // return this.dataAccessLayer.excuteCommand(command);
+    getTeamsCount(): Promise<number> {
+        return this.teamRepo.count();
+    }
+    createTeam(teamDto: TeamDto): Promise<any> {
+        const team = new Team();
+        team.name = teamDto.name;
+        return this.teamRepo.insert(team);
     }
     async getAllTeams(): Promise<any[]> {
-        throw new NotImplementedException();
-        // const query = 'select teamid,name from activites.team;';
-        // const result = await this.dataAccessLayer.getQueryResult(query);
-        // return result.rows;
+        return this.teamRepo.find();
     }
 
 }

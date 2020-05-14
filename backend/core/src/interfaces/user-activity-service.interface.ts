@@ -1,9 +1,11 @@
 import { ActivityDto } from "../dtos/activity.dto";
-import { ActivityDurationDto } from "../dtos/activity.duration.dto";
 
 export interface IUserActivityService {
     createUserActivity(activityDto: ActivityDto): any;
-    createUserActivityDurations(activityDurationDto: ActivityDurationDto): any;
+    createUserActivityDurations(userActivity: ActivityDto): Promise<any>;
     getUserActivities(): Promise<any[]>;
-    getUserActivitiesDurations(): any[];
+    getUserActivitiesDurations(): Promise<any[]>;
+    getUserActivitiesDurationsBySession(): Promise<any[]>;
+    getActivities(): Promise<any[]>;
+
 }
