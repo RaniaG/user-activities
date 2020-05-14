@@ -1,6 +1,6 @@
 import { ITeamService, TeamDto, Team } from "../../core/build/index";
 import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "../../Infrastructure/node_modules/typeorm";
+import { Repository } from "typeorm";
 
 export class TeamService implements ITeamService {
     constructor(@InjectRepository(Team) private readonly teamRepo: Repository<Team>) {

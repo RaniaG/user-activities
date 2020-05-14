@@ -54,12 +54,15 @@
 
 <script>
 import { Consts } from "../consts";
+import io from "socket.io-client";
+
 export default {
   data: function() {
     return {
       realTimeData: [],
       numberOfTeams: 0,
-      numberOfUsers: 0
+      numberOfUsers: 0,
+      isConnected: false
     };
   },
   methods: {
@@ -75,6 +78,12 @@ export default {
         this.realTimeData = response.body.dashboardData;
         this.numberOfTeams = response.body.teamsCount;
         this.numberOfUsers = response.body.usersCount;
+        const SocketInstance = io("http://localhost:3000");
+        let self = this;
+        SocketInstance.on("message", data => {
+          debugger;
+          self.realTimeData.unshift(data);
+        });
       },
       response => {
         // error callback

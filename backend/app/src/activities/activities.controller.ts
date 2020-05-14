@@ -12,9 +12,15 @@ export class ActivitiesController {
 
     @Post()
     async logActivityAction(@Body() activityDto: ActivityDto) {
-        await this.userActivitiesService.createUserActivity(activityDto);
+        const userAct = await this.userActivitiesService.createUserActivity(activityDto);
         if (activityDto.action == "end")
             await this.userActivitiesService.createUserActivityDurations(activityDto);
-        this.activitiesGateway.emitEvent("message", activityDto);
+        this.activitiesGateway.emitEvent("message", {
+            user: userAct.user.name,
+            sessionId: userAct.sessionId,
+            timeStamp: userAct.timeStamp,
+            action: userAct.action,
+            activity: userAct.activity.name
+        });
     }
 }

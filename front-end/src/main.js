@@ -8,6 +8,8 @@ import Dashboard from './components/dashboard.vue'
 import teams from './components/teams.vue'
 import users from './components/users.vue'
 import VueResource from 'vue-resource'
+import SocketIO from 'socket.io-client';
+
 
 import { routes } from './routes'
 library.add(
